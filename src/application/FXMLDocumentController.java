@@ -104,46 +104,38 @@ public class FXMLDocumentController implements Initializable {
     
     private Stage stage;
     private Scene scene;
-    private Series<Number, Number> series;
     private File selectedFile;
     private File saveFile;
-    
-    private Data<Number, Number> lastData;
-    
+        
     private FeatureCollection<SimpleFeatureType, SimpleFeature> fc;
     private SimpleFeature selectedFeature;
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         System.out.println("Bienvenue");
-        //affichage du graph (add parameter data)
-        series = new Series<Number, Number>();
-        chart.setAnimated(false);        
-        chart.getData().add(series);
-        chart.setLegendVisible(false);
         saveMenuItem.setDisable(true);
         featuresList.setVisible(false);
                 
-        //texfield formatter
-        Pattern validEditingState = Pattern.compile("-?(([1-9][0-9]*)|0)?(\\.[0-9]*)?");
-        UnaryOperator<TextFormatter.Change> filter = c -> {
-            String text = c.getControlNewText();
-            if (validEditingState.matcher(text).matches()) return c;
-            else return null;
-        };
-        StringConverter<Double> converter = new StringConverter<Double>() {
-            @Override
-            public Double fromString(String s) {
-                if (s.isEmpty() || "-".equals(s) || ".".equals(s) || "-.".equals(s)) return 0.0 ;
-                else return Double.valueOf(s);
-            }
-            @Override
-            public String toString(Double d) {
-                return d.toString();
-            }
-        };
-        TextFormatter<Double> textFormatter = new TextFormatter<>(converter, 0.0, filter);
-        pointHeightTextField.setTextFormatter(textFormatter);
+//        //texfield formatter
+//        Pattern validEditingState = Pattern.compile("-?(([1-9][0-9]*)|0)?(\\.[0-9]*)?");
+//        UnaryOperator<TextFormatter.Change> filter = c -> {
+//            String text = c.getControlNewText();
+//            if (validEditingState.matcher(text).matches()) return c;
+//            else return null;
+//        };
+//        StringConverter<Double> converter = new StringConverter<Double>() {
+//            @Override
+//            public Double fromString(String s) {
+//                if (s.isEmpty() || "-".equals(s) || ".".equals(s) || "-.".equals(s)) return 0.0 ;
+//                else return Double.valueOf(s);
+//            }
+//            @Override
+//            public String toString(Double d) {
+//                return d.toString();
+//            }
+//        };
+//        TextFormatter<Double> textFormatter = new TextFormatter<>(converter, 0.0, filter);
+//        pointHeightTextField.setTextFormatter(textFormatter);
     }
 	
     /****** MENU BAR METHODS ******/
@@ -158,12 +150,12 @@ public class FXMLDocumentController implements Initializable {
         if (selectedFile != null) {
         	System.out.println(selectedFile.getName());
         	addActionClicList();
+        	loadFeatureCollectionParameters();
         	saveMenuItem.setDisable(false);
         }
     }
     
     //save new values in geojson
-    //load geojson
     @FXML
     private void saveGeoJson(ActionEvent event) {
         System.out.println("Save GeoJson");
@@ -208,58 +200,59 @@ public class FXMLDocumentController implements Initializable {
     }
     
     @FXML
-    private void saveFeatureCoordinates() {
+    private void saveFeatureParameters() {
     	int i = 0;
-    	for (Data<Number, Number> data : series.getData()) {
-        	ApplicationUtils.saveCoordinates(selectedFeature, i, (double)data.getYValue());
-        	i++;
-        }
+//    	for (Data<Number, Number> data : series.getData()) {
+//        	ApplicationUtils.saveCoordinates(selectedFeature, i, (double)data.getYValue());
+//        	i++;
+//        }
     }
     
-    @FXML
-    public void changeNodeValue(ActionEvent e) {
-    	if(lastData != null) lastData.setYValue(Double.parseDouble(pointHeightTextField.getText()));
-    }    
-    
-    
-    
     /****** OTHER METHODS ******/
-    public void addActionDragPoint() {
-        for (Data<Number, Number> data : series.getData()) {
-            Node node = data.getNode() ;
-            node.setCursor(Cursor.HAND);
-            node.setOnMousePressed(e -> {
-            	if(lastData != data){
-            		if(lastData != null){
-            			lastData.getNode().setStyle("");
-            		}
-            		else {
-                		pointHeightTextField.setDisable(false);
-                		pointHeightButton.setDisable(false);
-            		}
-            		lastData = data;
-            		node.setStyle("-fx-background-color: #00AA00, #000000;");
-                    pointHeightTextField.setText(lastData.getYValue().toString());
-            	}            	
-            });
-            node.setOnMouseDragged(e -> {
-                Point2D pointInScene = new Point2D(e.getSceneX(), e.getSceneY());
-                double yAxisLoc = yAxis.sceneToLocal(pointInScene).getY();
-                Number y = yAxis.getValueForDisplay(yAxisLoc);
-                data.setYValue(y);            
-                pointHeightTextField.setText(y.toString());
-            });
-        }
-	}
+//    public void addActionDragPoint() {
+//        for (Data<Number, Number> data : series.getData()) {
+//            Node node = data.getNode() ;
+//            node.setCursor(Cursor.HAND);
+//            node.setOnMousePressed(e -> {
+//            	if(lastData != data){
+//            		if(lastData != null){
+//            			lastData.getNode().setStyle("");
+//            		}
+//            		else {
+//                		pointHeightTextField.setDisable(false);
+//                		pointHeightButton.setDisable(false);
+//            		}
+//            		lastData = data;
+//            		node.setStyle("-fx-background-color: #00AA00, #000000;");
+//                    pointHeightTextField.setText(lastData.getYValue().toString());
+//            	}            	
+//            });
+//            node.setOnMouseDragged(e -> {
+//                Point2D pointInScene = new Point2D(e.getSceneX(), e.getSceneY());
+//                double yAxisLoc = yAxis.sceneToLocal(pointInScene).getY();
+//                Number y = yAxis.getValueForDisplay(yAxisLoc);
+//                data.setYValue(y);            
+//                pointHeightTextField.setText(y.toString());
+//            });
+//        }
+//	}
+
+    public void loadFeatureCollectionParameters(){
+    	
+    	SimpleFeatureType ft = ApplicationUtils.loadFeatureCollectionParameters(fc);
+    	ft.getTypes().forEach(type ->{
+    		System.out.println(type.toString());
+    	});
+    }
     
     public void addActionClicList() {
     	try {
     		fc = ApplicationUtils.geoJsonToFeatureCollection(selectedFile);
     		featuresList.setItems(null);
-    		lastData = null;
-    		pointHeightTextField.setDisable(true);
-    		pointHeightButton.setDisable(true);
-        	series.getData().clear();
+    		//lastData = null;
+    		//pointHeightTextField.setDisable(true);
+    		//pointHeightButton.setDisable(true);
+        	//series.getData().clear();
 			ObservableList<Object> observableList = FXCollections.observableArrayList(fc.toArray());
 			featuresList.setVisible(true);
 			featuresList.setItems(observableList);
@@ -267,15 +260,15 @@ public class FXMLDocumentController implements Initializable {
 		        @Override
 		        public void handle(MouseEvent event) {
 		        	selectedFeature = (SimpleFeature) featuresList.getSelectionModel().getSelectedItem();
-		        	series.getData().clear();
-		    		lastData = null;
-		    		pointHeightTextField.setDisable(true);
-		    		pointHeightButton.setDisable(true);
-		            ArrayList<Data<Number, Number>> datas = ApplicationUtils.loadCoordinates(selectedFeature);			            	            
-		            datas.forEach(data -> {
-		            	series.getData().add(data);
-		            });
-		            addActionDragPoint();
+//		        	series.getData().clear();
+//		    		lastData = null;
+//		    		pointHeightTextField.setDisable(true);
+//		    		pointHeightButton.setDisable(true);
+//		            ArrayList<Data<Number, Number>> datas = ApplicationUtils.loadCoordinates(selectedFeature);			            	            
+//		            datas.forEach(data -> {
+//		            	series.getData().add(data);
+//		            });
+//		            addActionDragPoint();
 		        }
 		    });
 		} catch (FileNotFoundException e) {

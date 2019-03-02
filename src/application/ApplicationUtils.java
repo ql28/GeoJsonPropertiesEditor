@@ -27,12 +27,14 @@ public class ApplicationUtils {
 	//create a feature collection from a file
 	@SuppressWarnings("unchecked")
 	public static FeatureCollection<SimpleFeatureType, SimpleFeature> geoJsonToFeatureCollection(File featureCollectionFile) throws FileNotFoundException, IOException {
-				
 		featureJSON = new FeatureJSON();
 		return featureJSON.readFeatureCollection(new FileInputStream(featureCollectionFile));
 	}
 	
-	
+	public static SimpleFeatureType loadFeatureCollectionParameters(FeatureCollection<SimpleFeatureType, SimpleFeature> fc){
+		return fc.getSchema();
+	}
+		
 	public static ArrayList<Data<Number, Number>> loadCoordinates(SimpleFeature sf){
 		ArrayList<Data<Number, Number>> ret = new ArrayList<Data<Number, Number>>();
 		Coordinate[] c = ((Geometry) sf.getDefaultGeometryProperty().getValue()).getCoordinates();
