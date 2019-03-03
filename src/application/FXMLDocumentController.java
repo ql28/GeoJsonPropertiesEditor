@@ -3,18 +3,30 @@ package application;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.ClassUtils;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
+import org.geotools.feature.type.Descriptors;
 import org.opengis.feature.Feature;
+import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.PropertyDescriptor;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
@@ -35,6 +47,9 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart.Data;
 import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -44,6 +59,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
@@ -66,6 +82,8 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private VBox parametersVBox;
     @FXML
+    private ListView<Object> parametersList;
+    @FXML
     private LineChart<Number,Number> chart;
     @FXML
     private NumberAxis xAxis;
@@ -86,13 +104,7 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private Button saveFeatureCoordinatesButton;
     @FXML
-    private Button graphGoLeftButton;
-    @FXML
-    private Button graphGoRightButton;
-    @FXML
-    private Button graphZoomInButton;
-    @FXML
-    private Button graphZoomOutButton;
+    private Button addParametersButton;
     @FXML
     private TextField pointHeightTextField;
     @FXML
@@ -109,6 +121,7 @@ public class FXMLDocumentController implements Initializable {
         
     private FeatureCollection<SimpleFeatureType, SimpleFeature> fc;
     private SimpleFeature selectedFeature;
+    private SimpleFeatureType featureTypeParameters;
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -208,41 +221,63 @@ public class FXMLDocumentController implements Initializable {
 //        }
     }
     
-    /****** OTHER METHODS ******/
-//    public void addActionDragPoint() {
-//        for (Data<Number, Number> data : series.getData()) {
-//            Node node = data.getNode() ;
-//            node.setCursor(Cursor.HAND);
-//            node.setOnMousePressed(e -> {
-//            	if(lastData != data){
-//            		if(lastData != null){
-//            			lastData.getNode().setStyle("");
-//            		}
-//            		else {
-//                		pointHeightTextField.setDisable(false);
-//                		pointHeightButton.setDisable(false);
-//            		}
-//            		lastData = data;
-//            		node.setStyle("-fx-background-color: #00AA00, #000000;");
-//                    pointHeightTextField.setText(lastData.getYValue().toString());
-//            	}            	
-//            });
-//            node.setOnMouseDragged(e -> {
-//                Point2D pointInScene = new Point2D(e.getSceneX(), e.getSceneY());
-//                double yAxisLoc = yAxis.sceneToLocal(pointInScene).getY();
-//                Number y = yAxis.getValueForDisplay(yAxisLoc);
-//                data.setYValue(y);            
-//                pointHeightTextField.setText(y.toString());
-//            });
-//        }
-//	}
-
-    public void loadFeatureCollectionParameters(){
+    @FXML
+    private void saveParametersConfiguration(){
     	
-    	SimpleFeatureType ft = ApplicationUtils.loadFeatureCollectionParameters(fc);
-    	ft.getTypes().forEach(type ->{
-    		System.out.println(type.toString());
-    	});
+    }
+    
+    @FXML
+    private void addParameters(){
+    	HBox hb = new HBox();
+		TextField paramName = new TextField();
+		hb.getChildren().add(paramName);
+		ChoiceBox<Serializable> cb = new ChoiceBox<Serializable>(FXCollections.observableArrayList(Long.class, String.class, Boolean.class));
+		hb.getChildren().add(cb);
+		parametersVBox.getChildren().add(hb);
+    }
+    
+    /****** OTHER METHODS ******/
+    public void loadFeatureCollectionParameters(){
+    	featureTypeParameters = ApplicationUtils.loadFeatureCollectionParameters(fc);
+    	Collection<PropertyDescriptor> descriptors = featureTypeParameters.getDescriptors();
+    	ArrayList<Object> ret = new ArrayList<Object>();
+    	Iterator<PropertyDescriptor> i = descriptors.iterator();
+    	addParametersButton.setDisable(false);
+    	while(i.hasNext()){
+    		
+    		PropertyDescriptor desc = i.next();
+
+    		ret.add(desc);
+    		//).add((desc.getName().toString(), desc.getType().getBinding().toString());
+    		
+//    		HBox hb = new HBox();
+//    		TextField paramName = new TextField();
+//    		paramName.setText(desc.getName().toString());
+//    		hb.getChildren().add(paramName);
+//    		if(desc.getType().getBinding() == Boolean.class){
+//    			CheckBox cb = new CheckBox();
+//    			hb.getChildren().add(cb);
+//    		}
+//    		else if(desc.getType().getBinding() == Long.class){
+//    			TextField tf = new TextField();
+//    			hb.getChildren().add(tf);	
+//    		}
+//    		else if(desc.getType().getBinding() == String.class){
+//    			TextField tf = new TextField();
+//    			hb.getChildren().add(tf);
+//    		}
+//			parametersVBox.getChildren().add(hb);
+    		
+        	HBox hb = new HBox();
+    		TextField paramName = new TextField();
+    		paramName.setText(desc.getName().toString());
+    		hb.getChildren().add(paramName);
+    		ChoiceBox<Serializable> cb = new ChoiceBox<Serializable>(FXCollections.observableArrayList(Long.class, String.class, Boolean.class));
+    		cb.getSelectionModel().select(desc.getType().getBinding());
+    		hb.getChildren().add(cb);
+    		if(cb.getSelectionModel().getSelectedIndex() != -1)	parametersVBox.getChildren().add(hb);
+    	}
+    	System.out.println(featureTypeParameters.getDescriptors().isEmpty());
     }
     
     public void addActionClicList() {
@@ -260,15 +295,33 @@ public class FXMLDocumentController implements Initializable {
 		        @Override
 		        public void handle(MouseEvent event) {
 		        	selectedFeature = (SimpleFeature) featuresList.getSelectionModel().getSelectedItem();
-//		        	series.getData().clear();
-//		    		lastData = null;
-//		    		pointHeightTextField.setDisable(true);
-//		    		pointHeightButton.setDisable(true);
-//		            ArrayList<Data<Number, Number>> datas = ApplicationUtils.loadCoordinates(selectedFeature);			            	            
-//		            datas.forEach(data -> {
-//		            	series.getData().add(data);
-//		            });
-//		            addActionDragPoint();
+		        	parametersVBox.getChildren().clear();
+		        	
+		        	Collection<Property> properties = selectedFeature.getProperties();
+		        	Iterator<Property> i = properties.iterator();
+		        	addParametersButton.setDisable(false);
+		        	while(i.hasNext()){
+		        		Property prop = i.next();		        		
+		            	HBox hb = new HBox();
+		        		Label paramName = new Label();
+		        		paramName.setText(prop.getName().toString());
+		        		hb.getChildren().add(paramName);
+		        		if(prop.getType().getBinding() == Boolean.class){
+		        			CheckBox cb = new CheckBox();
+		        			hb.getChildren().add(cb);
+		        		}
+		        		else if(prop.getType().getBinding() == Long.class){
+		        			TextField tf = new TextField();
+		        			tf.setText(prop.getValue().toString());
+		        			hb.getChildren().add(tf);	
+		        		}
+		        		else if(prop.getType().getBinding() == String.class){
+		        			TextField tf = new TextField();
+		        			tf.setText(prop.getValue().toString());
+		        			hb.getChildren().add(tf);
+		        		}
+		    			parametersVBox.getChildren().add(hb);
+		    		}	        	
 		        }
 		    });
 		} catch (FileNotFoundException e) {
