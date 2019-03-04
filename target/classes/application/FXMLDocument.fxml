@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -28,21 +29,25 @@
    </left>
    <center>
       <BorderPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-         <center>
-            <VBox fx:id="parametersVBox" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER" />
-         </center>
          <bottom>
             <HBox prefHeight="26.0" BorderPane.alignment="CENTER">
                <children>
-                  <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="1000.0" text="Save parameters values of this feature" />
+                  <Button mnemonicParsing="false" onAction="#saveParametersValues" prefHeight="25.0" prefWidth="1000.0" text="Save parameters values of this feature" />
                   <Button mnemonicParsing="false" onAction="#saveParametersConfiguration" prefHeight="25.0" prefWidth="1000.0" text="Save parameters configuration of the file" />
-                  <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="1000.0" text="Show parameters configuration" />
+                  <Button fx:id="showParametersButton" disable="true" mnemonicParsing="false" onAction="#loadFeatureCollectionParameters" prefHeight="25.0" prefWidth="1000.0" text="Show parameters configuration" />
                </children>
             </HBox>
          </bottom>
          <top>
             <Button fx:id="addParametersButton" disable="true" mnemonicParsing="false" onAction="#addParameters" text="+" BorderPane.alignment="CENTER" />
          </top>
+         <center>
+            <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+               <content>
+                  <VBox fx:id="parametersVBox" />
+               </content>
+            </ScrollPane>
+         </center>
       </BorderPane>
    </center>
 </BorderPane>

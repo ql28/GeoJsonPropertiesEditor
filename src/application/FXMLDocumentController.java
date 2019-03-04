@@ -106,6 +106,8 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private Button addParametersButton;
     @FXML
+    private Button showParametersButton;
+    @FXML
     private TextField pointHeightTextField;
     @FXML
     private Button pointHeightButton;
@@ -122,6 +124,8 @@ public class FXMLDocumentController implements Initializable {
     private FeatureCollection<SimpleFeatureType, SimpleFeature> fc;
     private SimpleFeature selectedFeature;
     private SimpleFeatureType featureTypeParameters;
+    
+    private List<Button> delButtonList = new ArrayList<Button>();
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -227,14 +231,45 @@ public class FXMLDocumentController implements Initializable {
     }
     
     @FXML
+    private void saveParametersValues(){
+    	parametersVBox.getChildren().forEach(child ->{
+    		ObservableList<Node> params = ((HBox) child).getChildren();
+    		
+    		String parameterName = ((Label)params.get(0)).getText();
+    		
+    		String parameterString;
+    		long parameterLong;
+    		boolean parameterBool;
+
+    		try{
+    			parameterString = ((TextField)params.get(1)).getText(); 
+        		selectedFeature.getProperty(parameterName).setValue(parameterString);
+    		} catch(Exception e){}
+    		try{
+    			parameterLong = Long.parseLong(((TextField)params.get(1)).getText());
+        		selectedFeature.getProperty(parameterName).setValue(parameterLong);     			
+    		} catch(Exception e){}
+    		try{
+    			parameterBool = ((CheckBox)params.get(1)).selectedProperty().getValue(); 
+        		selectedFeature.getProperty(parameterName).setValue(parameterBool);    			
+    		} catch(Exception e){}
+    	});
+    }
+    
+    @FXML
     private void addParameters(){
     	HBox hb = new HBox();
 		TextField paramName = new TextField();
 		hb.getChildren().add(paramName);
 		ChoiceBox<Serializable> cb = new ChoiceBox<Serializable>(FXCollections.observableArrayList(Long.class, String.class, Boolean.class));
 		hb.getChildren().add(cb);
+		Button delButton = new Button();
+		delButton.setText("X");
+		delButtonList.add(delButton);
+		hb.getChildren().add(delButton);
 		parametersVBox.getChildren().add(hb);
-    }
+    	addActionClicDelButton();
+    }   
     
     /****** OTHER METHODS ******/
     public void loadFeatureCollectionParameters(){
@@ -243,31 +278,12 @@ public class FXMLDocumentController implements Initializable {
     	ArrayList<Object> ret = new ArrayList<Object>();
     	Iterator<PropertyDescriptor> i = descriptors.iterator();
     	addParametersButton.setDisable(false);
+    	showParametersButton.setDisable(false);
     	while(i.hasNext()){
     		
     		PropertyDescriptor desc = i.next();
-
     		ret.add(desc);
-    		//).add((desc.getName().toString(), desc.getType().getBinding().toString());
-    		
-//    		HBox hb = new HBox();
-//    		TextField paramName = new TextField();
-//    		paramName.setText(desc.getName().toString());
-//    		hb.getChildren().add(paramName);
-//    		if(desc.getType().getBinding() == Boolean.class){
-//    			CheckBox cb = new CheckBox();
-//    			hb.getChildren().add(cb);
-//    		}
-//    		else if(desc.getType().getBinding() == Long.class){
-//    			TextField tf = new TextField();
-//    			hb.getChildren().add(tf);	
-//    		}
-//    		else if(desc.getType().getBinding() == String.class){
-//    			TextField tf = new TextField();
-//    			hb.getChildren().add(tf);
-//    		}
-//			parametersVBox.getChildren().add(hb);
-    		
+    	
         	HBox hb = new HBox();
     		TextField paramName = new TextField();
     		paramName.setText(desc.getName().toString());
@@ -275,9 +291,24 @@ public class FXMLDocumentController implements Initializable {
     		ChoiceBox<Serializable> cb = new ChoiceBox<Serializable>(FXCollections.observableArrayList(Long.class, String.class, Boolean.class));
     		cb.getSelectionModel().select(desc.getType().getBinding());
     		hb.getChildren().add(cb);
+    		Button delButton = new Button();
+    		delButton.setText("X");
+    		delButtonList.add(delButton);
+    		hb.getChildren().add(delButton);
     		if(cb.getSelectionModel().getSelectedIndex() != -1)	parametersVBox.getChildren().add(hb);
     	}
-    	System.out.println(featureTypeParameters.getDescriptors().isEmpty());
+    	addActionClicDelButton();
+    }
+    
+    public void addActionClicDelButton(){    	
+    	delButtonList.forEach(delButton ->{
+    		delButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
+    			@Override
+    			public void handle(MouseEvent arg0) {
+    				parametersVBox.getChildren().remove(delButton.getParent());
+    			}    			
+    		});	
+    	});
     }
     
     public void addActionClicList() {
