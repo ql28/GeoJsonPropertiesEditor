@@ -25,16 +25,21 @@ import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.feature.type.Descriptors;
+import org.geotools.referencing.CRS;
 import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.PropertyDescriptor;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -56,6 +61,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionModel;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
@@ -115,9 +121,7 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private Button saveParametersValuesButton;
     @FXML
-    private TextField pointHeightTextField;
-    @FXML
-    private Button pointHeightButton;
+    private ChoiceBox<String> crsChoiceBox;
     
     /************************/
     /*--------DATA----------*/
@@ -131,7 +135,8 @@ public class FXMLDocumentController implements Initializable {
     private FeatureCollection<SimpleFeatureType, SimpleFeature> fc;
     private SimpleFeature selectedFeature;
     private SimpleFeatureType featureTypeParameters;
-    
+
+    private CoordinateReferenceSystem selectedCRS;
     private List<Button> delButtonList = new ArrayList<Button>();
     
     @Override
@@ -139,7 +144,23 @@ public class FXMLDocumentController implements Initializable {
         System.out.println("Bienvenue");
         saveMenuItem.setDisable(true);
         featuresList.setVisible(false);
-                
+        
+        crsChoiceBox.setItems(FXCollections.observableArrayList(
+    	    "EPSG:4326",
+    	    "EPSG:32735",
+    	    "EPSG:23032"
+    	));
+        
+        crsChoiceBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+				try {
+					selectedCRS = CRS.decode(crsChoiceBox.getSelectionModel().getSelectedItem().toString());
+				} catch (FactoryException e) {
+					e.printStackTrace();
+				}
+            }
+        });
+        
 //        //texfield formatter
 //        Pattern validEditingState = Pattern.compile("-?(([1-9][0-9]*)|0)?(\\.[0-9]*)?");
 //        UnaryOperator<TextFormatter.Change> filter = c -> {
@@ -173,6 +194,14 @@ public class FXMLDocumentController implements Initializable {
         selectedFile = fileChooser.showOpenDialog(stage);
         if (selectedFile != null) {
         	System.out.println(selectedFile.getName());
+    		try {
+				fc = ApplicationUtils.geoJsonToFeatureCollection(selectedFile);
+				selectedCRS = ApplicationUtils.geoJsonToCoordinateReferenceSystem(selectedFile);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
         	addActionClicList();
         	loadFeatureCollectionParameters();
         	saveMenuItem.setDisable(false);
@@ -236,7 +265,7 @@ public class FXMLDocumentController implements Initializable {
     private void saveParametersConfiguration(){
 		SimpleFeatureTypeBuilder simpleFeatureTypeBuilder = new SimpleFeatureTypeBuilder();
 		simpleFeatureTypeBuilder.setName("featureType");
-
+		simpleFeatureTypeBuilder.setCRS(selectedCRS);
 		simpleFeatureTypeBuilder.add("geometry", featureTypeParameters.getGeometryDescriptor().getType().getBinding());
 				
 		parametersVBox.getChildren().forEach(child ->{
@@ -248,16 +277,9 @@ public class FXMLDocumentController implements Initializable {
 		// init DefaultFeatureCollection
 		SimpleFeatureBuilder simpleFeatureBuilder = new SimpleFeatureBuilder(simpleFeatureTypeBuilder.buildFeatureType());
 		DefaultFeatureCollection resultFeatureCollection = new DefaultFeatureCollection(null, simpleFeatureBuilder.getFeatureType());
-		
-		
 		FeatureIterator<SimpleFeature> iterator = fc.features();
-		
 		while(iterator.hasNext()){
 			SimpleFeature myFeature = iterator.next();
-			
-			//changer les properties de chaque feature selon le schema de la nouvelle featurecollection
-			//myFeature.set
-						
 	    	Collection<PropertyDescriptor> descriptors = resultFeatureCollection.getSchema().getDescriptors();
 	    	ArrayList<Object> ret = new ArrayList<Object>();
 	    	Iterator<PropertyDescriptor> i = descriptors.iterator();
@@ -273,6 +295,10 @@ public class FXMLDocumentController implements Initializable {
 			SimpleFeature sf = simpleFeatureBuilder.buildFeature(null);
 			resultFeatureCollection.add(sf);
 		}
+		
+		fc = resultFeatureCollection;
+    	addActionClicList();
+		loadFeatureCollectionParameters();
 	}
     
     @FXML
@@ -324,10 +350,10 @@ public class FXMLDocumentController implements Initializable {
     	Iterator<PropertyDescriptor> i = descriptors.iterator();
     	parametersVBox.getChildren().clear();
     	addParametersButton.setDisable(false);
+    	crsChoiceBox.setDisable(false);
     	showParametersButton.setDisable(true);
     	saveParametersConfigButton.setDisable(false);
     	saveParametersValuesButton.setDisable(true);
-    	addParametersButton.setDisable(false);
     	while(i.hasNext()){    		
     		PropertyDescriptor desc = i.next();
     		ret.add(desc);
@@ -360,59 +386,58 @@ public class FXMLDocumentController implements Initializable {
     }
     
     public void addActionClicList() {
-    	try {
-    		fc = ApplicationUtils.geoJsonToFeatureCollection(selectedFile);
-    		featuresList.setItems(null);
-    		//lastData = null;
-    		//pointHeightTextField.setDisable(true);
-    		//pointHeightButton.setDisable(true);
-        	//series.getData().clear();
-			ObservableList<Object> observableList = FXCollections.observableArrayList(fc.toArray());
-			featuresList.setVisible(true);
-			featuresList.setItems(observableList);
-			featuresList.setOnMouseClicked(new EventHandler<MouseEvent>() {
-		        @Override
-		        public void handle(MouseEvent event) {
-		        	selectedFeature = (SimpleFeature) featuresList.getSelectionModel().getSelectedItem();
-		        	addParametersButton.setDisable(true);
-		        	showParametersButton.setDisable(false);
-		        	saveParametersConfigButton.setDisable(true);
-		        	saveParametersValuesButton.setDisable(false);
-		        	parametersVBox.getChildren().clear();
-		        	
-		        	Collection<Property> properties = selectedFeature.getProperties();
-		        	Iterator<Property> i = properties.iterator();
-		        	while(i.hasNext()){
-		        		Property prop = i.next();		        		
-		            	HBox hb = new HBox();
-		        		Label paramName = new Label();
-		        		paramName.setText(prop.getName().toString());
-		        		//paramName.prefWidth(200);
-		        		paramName.setPrefWidth(200);
-		        		hb.getChildren().add(paramName);
-		        		if(prop.getType().getBinding() == Boolean.class){
-		        			CheckBox cb = new CheckBox();
-		        			hb.getChildren().add(cb);
-		        		}
-		        		else if(prop.getType().getBinding() == Long.class){
-		        			TextField tf = new TextField();
-		        			tf.setText(prop.getValue().toString());
-		        			hb.getChildren().add(tf);	
-		        		}
-		        		else if(prop.getType().getBinding() == String.class){
-		        			TextField tf = new TextField();
-		        			tf.setText(prop.getValue().toString());
-		        			hb.getChildren().add(tf);
-		        		}
+		featuresList.setItems(null);
+		//lastData = null;
+		//pointHeightTextField.setDisable(true);
+		//pointHeightButton.setDisable(true);
+    	//series.getData().clear();
+		ObservableList<Object> observableList = FXCollections.observableArrayList(fc.toArray());
+		featuresList.setVisible(true);
+		featuresList.setItems(observableList);
+		featuresList.setOnMouseClicked(new EventHandler<MouseEvent>() {
+	        @Override
+	        public void handle(MouseEvent event) {
+	        	selectedFeature = (SimpleFeature) featuresList.getSelectionModel().getSelectedItem();
+	        	addParametersButton.setDisable(true);
+	        	crsChoiceBox.setDisable(true);
+	        	showParametersButton.setDisable(false);
+	        	saveParametersConfigButton.setDisable(true);
+	        	saveParametersValuesButton.setDisable(false);
+	        	parametersVBox.getChildren().clear();
+	        	
+	        	Collection<Property> properties = selectedFeature.getProperties();
+	        	Iterator<Property> i = properties.iterator();
+	        	while(i.hasNext()){
+	        		Property prop = i.next();		        		
+	            	HBox hb = new HBox();
+	        		Label paramName = new Label();
+	        		paramName.setText(prop.getName().toString());
+	        		paramName.setPrefWidth(200);
+	        		hb.getChildren().add(paramName);
+	        		if(prop.getType().getBinding() == Boolean.class){
+	        			CheckBox cb = new CheckBox();
+	        			try{ cb.selectedProperty().set(Boolean.parseBoolean(prop.getValue().toString())); }
+	        			catch(Exception e){}
+	        			hb.getChildren().add(cb);
 		    			parametersVBox.getChildren().add(hb);
-		    		}	        	
-		        }
-		    });
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	        		}
+	        		else if(prop.getType().getBinding() == Long.class){
+	        			TextField tf = new TextField();
+	        			try{ tf.setText(prop.getValue().toString()); }
+	        			catch(Exception e){}
+	        			hb.getChildren().add(tf);	
+		    			parametersVBox.getChildren().add(hb);
+	        		}
+	        		else if(prop.getType().getBinding() == String.class){
+	        			TextField tf = new TextField();
+	        			try{ tf.setText(prop.getValue().toString()); }
+	        			catch(Exception e){}
+	        			hb.getChildren().add(tf);
+		    			parametersVBox.getChildren().add(hb);
+	        		}
+	    		}	        	
+	        }
+	    });
 	}
     
     void findStage(Stage stage) {

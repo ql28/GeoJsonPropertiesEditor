@@ -12,6 +12,7 @@ import org.geotools.geojson.feature.FeatureJSON;
 import org.geotools.geojson.geom.GeometryJSON;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
@@ -69,6 +70,13 @@ public class ApplicationUtils {
 	//create a geojson from a featurecollection
 	public static void featureCollectionToGeoJsonFile(FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection, File dir, String fileName) throws FileNotFoundException, IOException {
 		featureJSON = new FeatureJSON(new GeometryJSON(15));
+		featureJSON.setEncodeFeatureCollectionCRS(true);
 		featureJSON.writeFeatureCollection(featureCollection, new FileOutputStream(new File(dir, fileName)));
+	}
+	
+	//return the CoordinateReferenceSystem from a file
+	public static CoordinateReferenceSystem geoJsonToCoordinateReferenceSystem(File f) throws FileNotFoundException, IOException {
+		featureJSON = new FeatureJSON();
+		return featureJSON.readCRS(f);
 	}
 }

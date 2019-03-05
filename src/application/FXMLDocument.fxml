@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
@@ -38,9 +41,6 @@
                </children>
             </HBox>
          </bottom>
-         <top>
-            <Button fx:id="addParametersButton" disable="true" mnemonicParsing="false" onAction="#addParameters" text="+" BorderPane.alignment="CENTER" />
-         </top>
          <center>
             <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                <content>
@@ -48,6 +48,25 @@
                </content>
             </ScrollPane>
          </center>
+         <top>
+            <BorderPane prefHeight="25.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+               <left>
+                  <Button fx:id="addParametersButton" disable="true" mnemonicParsing="false" onAction="#addParameters" text="Add a parameter +" BorderPane.alignment="CENTER" />
+               </left>
+               <right>
+                  <HBox alignment="TOP_RIGHT" prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                     <children>
+                        <Label text="CRS">
+                           <padding>
+                              <Insets right="5.0" top="5.0" />
+                           </padding>
+                        </Label>
+                        <ChoiceBox fx:id="crsChoiceBox" prefWidth="150.0" />
+                     </children>
+                  </HBox>
+               </right>
+            </BorderPane>
+         </top>
       </BorderPane>
    </center>
 </BorderPane>
