@@ -19,8 +19,11 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.ClassUtils;
+import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.feature.type.Descriptors;
 import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
@@ -107,6 +110,10 @@ public class FXMLDocumentController implements Initializable {
     private Button addParametersButton;
     @FXML
     private Button showParametersButton;
+    @FXML
+    private Button saveParametersConfigButton;
+    @FXML
+    private Button saveParametersValuesButton;
     @FXML
     private TextField pointHeightTextField;
     @FXML
@@ -227,8 +234,46 @@ public class FXMLDocumentController implements Initializable {
     
     @FXML
     private void saveParametersConfiguration(){
-    	
-    }
+		SimpleFeatureTypeBuilder simpleFeatureTypeBuilder = new SimpleFeatureTypeBuilder();
+		simpleFeatureTypeBuilder.setName("featureType");
+
+		simpleFeatureTypeBuilder.add("geometry", featureTypeParameters.getGeometryDescriptor().getType().getBinding());
+				
+		parametersVBox.getChildren().forEach(child ->{
+    		ObservableList<Node> params = ((HBox) child).getChildren();
+			try{ simpleFeatureTypeBuilder.add(((TextField)params.get(0)).getText(), (Class<?>)((ChoiceBox)params.get(1)).getSelectionModel().getSelectedItem()); }
+			catch(Exception e){}
+		});
+		
+		// init DefaultFeatureCollection
+		SimpleFeatureBuilder simpleFeatureBuilder = new SimpleFeatureBuilder(simpleFeatureTypeBuilder.buildFeatureType());
+		DefaultFeatureCollection resultFeatureCollection = new DefaultFeatureCollection(null, simpleFeatureBuilder.getFeatureType());
+		
+		
+		FeatureIterator<SimpleFeature> iterator = fc.features();
+		
+		while(iterator.hasNext()){
+			SimpleFeature myFeature = iterator.next();
+			
+			//changer les properties de chaque feature selon le schema de la nouvelle featurecollection
+			//myFeature.set
+						
+	    	Collection<PropertyDescriptor> descriptors = resultFeatureCollection.getSchema().getDescriptors();
+	    	ArrayList<Object> ret = new ArrayList<Object>();
+	    	Iterator<PropertyDescriptor> i = descriptors.iterator();
+	    	while(i.hasNext()){
+	    		PropertyDescriptor prop = i.next();
+	    		if(myFeature.getProperty(prop.getName()) != null){
+	    			simpleFeatureBuilder.add(myFeature.getProperty(prop.getName()).getValue());
+	    		}
+	    		else{
+	    			simpleFeatureBuilder.add(null);
+	    		}
+	    	}
+			SimpleFeature sf = simpleFeatureBuilder.buildFeature(null);
+			resultFeatureCollection.add(sf);
+		}
+	}
     
     @FXML
     private void saveParametersValues(){
@@ -277,10 +322,13 @@ public class FXMLDocumentController implements Initializable {
     	Collection<PropertyDescriptor> descriptors = featureTypeParameters.getDescriptors();
     	ArrayList<Object> ret = new ArrayList<Object>();
     	Iterator<PropertyDescriptor> i = descriptors.iterator();
+    	parametersVBox.getChildren().clear();
     	addParametersButton.setDisable(false);
-    	showParametersButton.setDisable(false);
-    	while(i.hasNext()){
-    		
+    	showParametersButton.setDisable(true);
+    	saveParametersConfigButton.setDisable(false);
+    	saveParametersValuesButton.setDisable(true);
+    	addParametersButton.setDisable(false);
+    	while(i.hasNext()){    		
     		PropertyDescriptor desc = i.next();
     		ret.add(desc);
     	
@@ -326,16 +374,21 @@ public class FXMLDocumentController implements Initializable {
 		        @Override
 		        public void handle(MouseEvent event) {
 		        	selectedFeature = (SimpleFeature) featuresList.getSelectionModel().getSelectedItem();
+		        	addParametersButton.setDisable(true);
+		        	showParametersButton.setDisable(false);
+		        	saveParametersConfigButton.setDisable(true);
+		        	saveParametersValuesButton.setDisable(false);
 		        	parametersVBox.getChildren().clear();
 		        	
 		        	Collection<Property> properties = selectedFeature.getProperties();
 		        	Iterator<Property> i = properties.iterator();
-		        	addParametersButton.setDisable(false);
 		        	while(i.hasNext()){
 		        		Property prop = i.next();		        		
 		            	HBox hb = new HBox();
 		        		Label paramName = new Label();
 		        		paramName.setText(prop.getName().toString());
+		        		//paramName.prefWidth(200);
+		        		paramName.setPrefWidth(200);
 		        		hb.getChildren().add(paramName);
 		        		if(prop.getType().getBinding() == Boolean.class){
 		        			CheckBox cb = new CheckBox();

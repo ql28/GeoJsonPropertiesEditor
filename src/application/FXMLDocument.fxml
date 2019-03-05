@@ -32,8 +32,8 @@
          <bottom>
             <HBox prefHeight="26.0" BorderPane.alignment="CENTER">
                <children>
-                  <Button mnemonicParsing="false" onAction="#saveParametersValues" prefHeight="25.0" prefWidth="1000.0" text="Save parameters values of this feature" />
-                  <Button mnemonicParsing="false" onAction="#saveParametersConfiguration" prefHeight="25.0" prefWidth="1000.0" text="Save parameters configuration of the file" />
+                  <Button fx:id="saveParametersValuesButton" disable="true" mnemonicParsing="false" onAction="#saveParametersValues" prefHeight="25.0" prefWidth="1000.0" text="Save parameters values of this feature" />
+                  <Button fx:id="saveParametersConfigButton" disable="true" mnemonicParsing="false" onAction="#saveParametersConfiguration" prefHeight="25.0" prefWidth="1000.0" text="Save parameters configuration of the file" />
                   <Button fx:id="showParametersButton" disable="true" mnemonicParsing="false" onAction="#loadFeatureCollectionParameters" prefHeight="25.0" prefWidth="1000.0" text="Show parameters configuration" />
                </children>
             </HBox>
