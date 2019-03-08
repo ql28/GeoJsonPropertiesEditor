@@ -61,7 +61,7 @@
                               <Insets right="5.0" top="5.0" />
                            </padding>
                         </Label>
-                        <ChoiceBox fx:id="crsChoiceBox" disable="true" prefWidth="150.0" />
+                        <ChoiceBox fx:id="crsChoiceBox" prefWidth="150.0" />
                      </children>
                   </HBox>
                </right>

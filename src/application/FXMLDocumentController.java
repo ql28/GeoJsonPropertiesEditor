@@ -160,27 +160,6 @@ public class FXMLDocumentController implements Initializable {
 				}
             }
         });
-        
-//        //texfield formatter
-//        Pattern validEditingState = Pattern.compile("-?(([1-9][0-9]*)|0)?(\\.[0-9]*)?");
-//        UnaryOperator<TextFormatter.Change> filter = c -> {
-//            String text = c.getControlNewText();
-//            if (validEditingState.matcher(text).matches()) return c;
-//            else return null;
-//        };
-//        StringConverter<Double> converter = new StringConverter<Double>() {
-//            @Override
-//            public Double fromString(String s) {
-//                if (s.isEmpty() || "-".equals(s) || ".".equals(s) || "-.".equals(s)) return 0.0 ;
-//                else return Double.valueOf(s);
-//            }
-//            @Override
-//            public String toString(Double d) {
-//                return d.toString();
-//            }
-//        };
-//        TextFormatter<Double> textFormatter = new TextFormatter<>(converter, 0.0, filter);
-//        pointHeightTextField.setTextFormatter(textFormatter);
     }
 	
     /****** MENU BAR METHODS ******/
@@ -253,15 +232,6 @@ public class FXMLDocumentController implements Initializable {
     }
     
     @FXML
-    private void saveFeatureParameters() {
-    	int i = 0;
-//    	for (Data<Number, Number> data : series.getData()) {
-//        	ApplicationUtils.saveCoordinates(selectedFeature, i, (double)data.getYValue());
-//        	i++;
-//        }
-    }
-    
-    @FXML
     private void saveParametersConfiguration(){
 		SimpleFeatureTypeBuilder simpleFeatureTypeBuilder = new SimpleFeatureTypeBuilder();
 		simpleFeatureTypeBuilder.setName("featureType");
@@ -281,7 +251,6 @@ public class FXMLDocumentController implements Initializable {
 		while(iterator.hasNext()){
 			SimpleFeature myFeature = iterator.next();
 	    	Collection<PropertyDescriptor> descriptors = resultFeatureCollection.getSchema().getDescriptors();
-	    	ArrayList<Object> ret = new ArrayList<Object>();
 	    	Iterator<PropertyDescriptor> i = descriptors.iterator();
 	    	while(i.hasNext()){
 	    		PropertyDescriptor prop = i.next();
@@ -289,7 +258,11 @@ public class FXMLDocumentController implements Initializable {
 	    			simpleFeatureBuilder.add(myFeature.getProperty(prop.getName()).getValue());
 	    		}
 	    		else{
-	    			simpleFeatureBuilder.add(null);
+	    			if(prop.getType().getBinding() == Double.class) simpleFeatureBuilder.add(0.0);
+	    			else if(prop.getType().getBinding() == Long.class) simpleFeatureBuilder.add(0);
+	    			else if(prop.getType().getBinding() == String.class) simpleFeatureBuilder.add("");
+	    			else if(prop.getType().getBinding() == Boolean.class) simpleFeatureBuilder.add(false);
+	    			else simpleFeatureBuilder.add(null);
 	    		}
 	    	}
 			SimpleFeature sf = simpleFeatureBuilder.buildFeature(null);
@@ -307,23 +280,24 @@ public class FXMLDocumentController implements Initializable {
     		ObservableList<Node> params = ((HBox) child).getChildren();
     		
     		String parameterName = ((Label)params.get(0)).getText();
-    		
-    		String parameterString;
-    		long parameterLong;
-    		boolean parameterBool;
 
-    		try{
-    			parameterString = ((TextField)params.get(1)).getText(); 
+    		if(selectedFeature.getProperty(parameterName).getType().getBinding() == Double.class){
+    			double parameterDouble = Double.parseDouble(((TextField)params.get(1)).getText());
+    			selectedFeature.getProperty(parameterName).setValue(parameterDouble);    			
+    		}
+    		else if(selectedFeature.getProperty(parameterName).getType().getBinding() == Long.class){
+    			long parameterLong = Long.parseLong(((TextField)params.get(1)).getText());
+    			selectedFeature.getProperty(parameterName).setValue(parameterLong);    			
+    		}
+    		else if(selectedFeature.getProperty(parameterName).getType().getBinding() == String.class){
+    			String parameterString = ((TextField)params.get(1)).getText();
         		selectedFeature.getProperty(parameterName).setValue(parameterString);
-    		} catch(Exception e){}
-    		try{
-    			parameterLong = Long.parseLong(((TextField)params.get(1)).getText());
-        		selectedFeature.getProperty(parameterName).setValue(parameterLong);     			
-    		} catch(Exception e){}
-    		try{
-    			parameterBool = ((CheckBox)params.get(1)).selectedProperty().getValue(); 
-        		selectedFeature.getProperty(parameterName).setValue(parameterBool);    			
-    		} catch(Exception e){}
+    		}
+    		else if(selectedFeature.getProperty(parameterName).getType().getBinding() == Boolean.class){
+    			boolean parameterBool = ((CheckBox)params.get(1)).selectedProperty().getValue(); 
+    			System.out.println(parameterBool);
+        		selectedFeature.getProperty(parameterName).setValue(parameterBool);
+    		}
     	});
     }
     
@@ -332,7 +306,7 @@ public class FXMLDocumentController implements Initializable {
     	HBox hb = new HBox();
 		TextField paramName = new TextField();
 		hb.getChildren().add(paramName);
-		ChoiceBox<Serializable> cb = new ChoiceBox<Serializable>(FXCollections.observableArrayList(Long.class, String.class, Boolean.class));
+		ChoiceBox<Serializable> cb = new ChoiceBox<Serializable>(FXCollections.observableArrayList(Long.class, Double.class, String.class, Boolean.class));
 		hb.getChildren().add(cb);
 		Button delButton = new Button();
 		delButton.setText("X");
@@ -362,7 +336,7 @@ public class FXMLDocumentController implements Initializable {
     		TextField paramName = new TextField();
     		paramName.setText(desc.getName().toString());
     		hb.getChildren().add(paramName);
-    		ChoiceBox<Serializable> cb = new ChoiceBox<Serializable>(FXCollections.observableArrayList(Long.class, String.class, Boolean.class));
+    		ChoiceBox<Serializable> cb = new ChoiceBox<Serializable>(FXCollections.observableArrayList(Long.class, Double.class, String.class, Boolean.class));
     		cb.getSelectionModel().select(desc.getType().getBinding());
     		hb.getChildren().add(cb);
     		Button delButton = new Button();
@@ -419,6 +393,13 @@ public class FXMLDocumentController implements Initializable {
 	        			try{ cb.selectedProperty().set(Boolean.parseBoolean(prop.getValue().toString())); }
 	        			catch(Exception e){}
 	        			hb.getChildren().add(cb);
+		    			parametersVBox.getChildren().add(hb);
+	        		}
+	        		else if(prop.getType().getBinding() == Double.class){
+	        			TextField tf = new TextField();
+	        			try{ tf.setText(prop.getValue().toString()); }
+	        			catch(Exception e){}
+	        			hb.getChildren().add(tf);	
 		    			parametersVBox.getChildren().add(hb);
 	        		}
 	        		else if(prop.getType().getBinding() == Long.class){
