@@ -122,6 +122,10 @@ public class FXMLDocumentController implements Initializable {
     private Button saveParametersValuesButton;
     @FXML
     private ChoiceBox<String> crsChoiceBox;
+    @FXML
+    private TextField pointHeightTextField;
+    @FXML
+    private Button pointHeightButton;
     
     /************************/
     /*--------DATA----------*/
@@ -129,9 +133,12 @@ public class FXMLDocumentController implements Initializable {
     
     private Stage stage;
     private Scene scene;
+    private Series<Number, Number> series;
     private File selectedFile;
     private File saveFile;
-        
+
+    private Data<Number, Number> lastData;
+    
     private FeatureCollection<SimpleFeatureType, SimpleFeature> fc;
     private SimpleFeature selectedFeature;
     private SimpleFeatureType featureTypeParameters;
@@ -142,8 +149,11 @@ public class FXMLDocumentController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         System.out.println("Bienvenue");
+        series = new Series<Number, Number>();
+        chart.setAnimated(false);        
+        chart.getData().add(series);
+        chart.setLegendVisible(false);
         saveMenuItem.setDisable(true);
-//        featuresList.setVisible(false);
         
         crsChoiceBox.setItems(FXCollections.observableArrayList(
     	    "EPSG:4326",
@@ -160,6 +170,28 @@ public class FXMLDocumentController implements Initializable {
 				}
             }
         });
+        
+
+        //texfield formatter
+        Pattern validEditingState = Pattern.compile("-?(([1-9][0-9]*)|0)?(\\.[0-9]*)?");
+        UnaryOperator<TextFormatter.Change> filter = c -> {
+            String text = c.getControlNewText();
+            if (validEditingState.matcher(text).matches()) return c;
+            else return null;
+        };
+        StringConverter<Double> converter = new StringConverter<Double>() {
+            @Override
+            public Double fromString(String s) {
+                if (s.isEmpty() || "-".equals(s) || ".".equals(s) || "-.".equals(s)) return 0.0 ;
+                else return Double.valueOf(s);
+            }
+            @Override
+            public String toString(Double d) {
+                return d.toString();
+            }
+        };
+        TextFormatter<Double> textFormatter = new TextFormatter<>(converter, 0.0, filter);
+        pointHeightTextField.setTextFormatter(textFormatter);
     }
 	
     /****** MENU BAR METHODS ******/
@@ -226,10 +258,18 @@ public class FXMLDocumentController implements Initializable {
     /****** PARAMETERS PANEL METHODS ******/
     //load geojson
     @FXML
-    private void graphGoLeft(ActionEvent event) {
-    	System.out.println(xAxis.getLowerBound());
-    	xAxis.setLowerBound(xAxis.getLowerBound() -1);
+    private void saveFeatureCoordinates() {
+    	int i = 0;
+    	for (Data<Number, Number> data : series.getData()) {
+        	ApplicationUtils.saveCoordinates(selectedFeature, i, (double)data.getYValue());
+        	i++;
+        }
     }
+    
+    @FXML
+    public void changeNodeValue(ActionEvent e) {
+    	if(lastData != null) lastData.setYValue(Double.parseDouble(pointHeightTextField.getText()));
+    }    
     
     @FXML
     private void saveParametersConfiguration(){
@@ -358,6 +398,34 @@ public class FXMLDocumentController implements Initializable {
     	});
     }
     
+    public void addActionDragPoint() {
+        for (Data<Number, Number> data : series.getData()) {
+            Node node = data.getNode() ;
+            node.setCursor(Cursor.HAND);
+            node.setOnMousePressed(e -> {
+            	if(lastData != data){
+            		if(lastData != null){
+            			lastData.getNode().setStyle("");
+            		}
+            		else {
+                		pointHeightTextField.setDisable(false);
+                		pointHeightButton.setDisable(false);
+            		}
+            		lastData = data;
+            		node.setStyle("-fx-background-color: #00AA00, #000000;");
+                    pointHeightTextField.setText(lastData.getYValue().toString());
+            	}            	
+            });
+            node.setOnMouseDragged(e -> {
+                Point2D pointInScene = new Point2D(e.getSceneX(), e.getSceneY());
+                double yAxisLoc = yAxis.sceneToLocal(pointInScene).getY();
+                Number y = yAxis.getValueForDisplay(yAxisLoc);
+                data.setYValue(y);            
+                pointHeightTextField.setText(y.toString());
+            });
+        }
+	}
+    
     public void addActionClicList() {
 		featuresList.setItems(null);
 		ObservableList<Object> observableList = FXCollections.observableArrayList(fc.toArray());
@@ -372,6 +440,17 @@ public class FXMLDocumentController implements Initializable {
 	        	saveParametersConfigButton.setVisible(false);
 	        	saveParametersValuesButton.setVisible(true);
 	        	parametersVBox.getChildren().clear();
+	        	
+	        	series.getData().clear();
+	    		lastData = null;
+	    		pointHeightTextField.setDisable(true);
+	    		pointHeightButton.setDisable(true);
+	            ArrayList<Data<Number, Number>> datas = ApplicationUtils.loadCoordinates(selectedFeature);			            	            
+	            datas.forEach(data -> {
+	            	System.out.println(data.toString());
+	            	series.getData().add(data);
+	            });
+	            addActionDragPoint();
 	        	
 	        	Collection<Property> properties = selectedFeature.getProperties();
 	        	Iterator<Property> i = properties.iterator();
