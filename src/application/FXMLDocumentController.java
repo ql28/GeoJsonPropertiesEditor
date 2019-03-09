@@ -91,7 +91,7 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private VBox parametersVBox;
     @FXML
-    private ListView<Object> parametersList;
+    private HBox parametersConfigurationHBox;
     @FXML
     private LineChart<Number,Number> chart;
     @FXML
@@ -143,7 +143,7 @@ public class FXMLDocumentController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         System.out.println("Bienvenue");
         saveMenuItem.setDisable(true);
-        featuresList.setVisible(false);
+//        featuresList.setVisible(false);
         
         crsChoiceBox.setItems(FXCollections.observableArrayList(
     	    "EPSG:4326",
@@ -323,11 +323,10 @@ public class FXMLDocumentController implements Initializable {
     	ArrayList<Object> ret = new ArrayList<Object>();
     	Iterator<PropertyDescriptor> i = descriptors.iterator();
     	parametersVBox.getChildren().clear();
-    	addParametersButton.setDisable(false);
-    	crsChoiceBox.setDisable(false);
-    	showParametersButton.setDisable(true);
-    	saveParametersConfigButton.setDisable(false);
-    	saveParametersValuesButton.setDisable(true);
+    	parametersConfigurationHBox.setVisible(true);
+    	showParametersButton.setVisible(false);
+    	saveParametersConfigButton.setVisible(true);
+    	saveParametersValuesButton.setVisible(false);
     	while(i.hasNext()){    		
     		PropertyDescriptor desc = i.next();
     		ret.add(desc);
@@ -361,10 +360,6 @@ public class FXMLDocumentController implements Initializable {
     
     public void addActionClicList() {
 		featuresList.setItems(null);
-		//lastData = null;
-		//pointHeightTextField.setDisable(true);
-		//pointHeightButton.setDisable(true);
-    	//series.getData().clear();
 		ObservableList<Object> observableList = FXCollections.observableArrayList(fc.toArray());
 		featuresList.setVisible(true);
 		featuresList.setItems(observableList);
@@ -372,11 +367,10 @@ public class FXMLDocumentController implements Initializable {
 	        @Override
 	        public void handle(MouseEvent event) {
 	        	selectedFeature = (SimpleFeature) featuresList.getSelectionModel().getSelectedItem();
-	        	addParametersButton.setDisable(true);
-	        	crsChoiceBox.setDisable(true);
-	        	showParametersButton.setDisable(false);
-	        	saveParametersConfigButton.setDisable(true);
-	        	saveParametersValuesButton.setDisable(false);
+	        	parametersConfigurationHBox.setVisible(false);
+	        	showParametersButton.setVisible(true);
+	        	saveParametersConfigButton.setVisible(false);
+	        	saveParametersValuesButton.setVisible(true);
 	        	parametersVBox.getChildren().clear();
 	        	
 	        	Collection<Property> properties = selectedFeature.getProperties();

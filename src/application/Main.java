@@ -11,7 +11,7 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws Exception {
 		
-		stage.setTitle("GeoJson Properties Editor");
+		stage.setTitle("GeoJson Editor");
 
     	FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLDocument.fxml"));
         Parent root = (Parent)loader.load();

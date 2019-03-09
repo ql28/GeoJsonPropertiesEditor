@@ -9,8 +9,12 @@
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane fx:id="contentPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.FXMLDocumentController">
@@ -31,42 +35,66 @@
       <ListView fx:id="featuresList" prefHeight="566.0" prefWidth="200.0" style="-fx-border-color: white; -fx-border-width: 1 1 1 1;" BorderPane.alignment="CENTER" />
    </left>
    <center>
-      <BorderPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-         <bottom>
-            <HBox prefHeight="26.0" BorderPane.alignment="CENTER">
-               <children>
-                  <Button fx:id="saveParametersValuesButton" disable="true" mnemonicParsing="false" onAction="#saveParametersValues" prefHeight="25.0" prefWidth="1000.0" text="Save parameters values of this feature" />
-                  <Button fx:id="saveParametersConfigButton" disable="true" mnemonicParsing="false" onAction="#saveParametersConfiguration" prefHeight="25.0" prefWidth="1000.0" text="Save parameters configuration of the file" />
-                  <Button fx:id="showParametersButton" disable="true" mnemonicParsing="false" onAction="#loadFeatureCollectionParameters" prefHeight="25.0" prefWidth="1000.0" text="Show parameters configuration" />
-               </children>
-            </HBox>
-         </bottom>
-         <center>
-            <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-               <content>
-                  <VBox fx:id="parametersVBox" />
-               </content>
-            </ScrollPane>
-         </center>
-         <top>
-            <BorderPane prefHeight="25.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-               <left>
-                  <Button fx:id="addParametersButton" disable="true" mnemonicParsing="false" onAction="#addParameters" text="Add a parameter +" BorderPane.alignment="CENTER" />
-               </left>
-               <right>
-                  <HBox alignment="TOP_RIGHT" prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+      <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+        <tabs>
+          <Tab text="Properties">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
-                        <Label text="CRS">
-                           <padding>
-                              <Insets right="5.0" top="5.0" />
-                           </padding>
-                        </Label>
-                        <ChoiceBox fx:id="crsChoiceBox" prefWidth="150.0" />
+                        <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <center>
+                              <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                                 <content>
+                                    <VBox fx:id="parametersVBox" />
+                                 </content>
+                              </ScrollPane>
+                              
+                                 </center>
+                           <top>
+                              <BorderPane prefHeight="25.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                                 <right>
+                                    <Pane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                                       <children>
+                                          <Button fx:id="saveParametersConfigButton" mnemonicParsing="false" onAction="#saveParametersConfiguration" prefHeight="25.0" prefWidth="200.0" text="Save parameters configuration" visible="false" />
+                                          <Button fx:id="saveParametersValuesButton" mnemonicParsing="false" onAction="#saveParametersValues" prefHeight="25.0" prefWidth="200.0" text="Save parameters values of feature" visible="false" />
+                                       </children>
+                                    </Pane>
+                                 </right>
+                                 <left>
+                                    <Pane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                                       <children>
+                                          <HBox fx:id="parametersConfigurationHBox" prefHeight="26.0" prefWidth="320.0" visible="false">
+                                             <children>
+                                                <Label text=" CRS">
+                                                   <padding>
+                                                      <Insets right="5.0" top="5.0" />
+                                                   </padding>
+                                                </Label>
+                                                <ChoiceBox fx:id="crsChoiceBox" prefWidth="150.0" />
+                                                <Button fx:id="addParametersButton" mnemonicParsing="false" onAction="#addParameters" text="Add a parameter +">
+                                                   <HBox.margin>
+                                                      <Insets left="5.0" />
+                                                   </HBox.margin>
+                                                </Button>
+                                             </children>
+                                          </HBox>
+                                          <Button fx:id="showParametersButton" mnemonicParsing="false" onAction="#loadFeatureCollectionParameters" prefHeight="25.0" prefWidth="200.0" text="Show parameters configuration" visible="false" />
+                                       </children>
+                                    </Pane>
+                                 </left>
+                              </BorderPane>
+                           </top>
+                        </BorderPane>
                      </children>
-                  </HBox>
-               </right>
-            </BorderPane>
-         </top>
-      </BorderPane>
+                  </AnchorPane>
+            </content>
+          </Tab>
+          <Tab text="Height edition">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+            </content>
+          </Tab>
+        </tabs>
+      </TabPane>
    </center>
 </BorderPane>
