@@ -31,17 +31,34 @@ public class ApplicationUtils {
 
 	private static FeatureJSON featureJSON;
 	
-	//create a feature collection from a file
+	/**
+	 * create a feature collection from a file
+	 * @param featureCollectionFile the file containing a feature collection
+	 * @return a feature collection
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
 	@SuppressWarnings("unchecked")
 	public static FeatureCollection<SimpleFeatureType, SimpleFeature> geoJsonToFeatureCollection(File featureCollectionFile) throws FileNotFoundException, IOException {
 		featureJSON = new FeatureJSON();
 		return featureJSON.readFeatureCollection(new FileInputStream(featureCollectionFile));
 	}
 	
+	/**
+	 * Load the schema defining the FeatureCollection structure
+	 * @param fc the feature collection
+	 * @return
+	 */
 	public static SimpleFeatureType loadFeatureCollectionParameters(FeatureCollection<SimpleFeatureType, SimpleFeature> fc){
 		return fc.getSchema();
 	}
 		
+	/**
+	 * Load coordinates of a feature and initialize Z value
+	 * @param sf the feature we want to load
+	 * @param myCRS the CRS of the feature collection
+	 * @return ArrayList containing all the coordinates formatted for the chart (distance, height)
+	 */
 	public static ArrayList<Data<Number, Number>> loadCoordinates(SimpleFeature sf, CoordinateReferenceSystem myCRS){
 		ArrayList<Data<Number, Number>> ret = new ArrayList<Data<Number, Number>>();
 		Coordinate[] c = ((Geometry) sf.getDefaultGeometryProperty().getValue()).getCoordinates();
@@ -54,6 +71,12 @@ public class ApplicationUtils {
 		return ret;
 	}
 	
+	/**
+	 * Save the coordinates from the chart to the feature's Geometry
+	 * @param sf the feature we want to update
+	 * @param idCoord the id of the point of the Geometry
+	 * @param val the Z value
+	 */
 	public static void saveCoordinates(SimpleFeature sf, int idCoord, double val){
 		Coordinate[] c = ((Geometry) sf.getDefaultGeometryProperty().getValue()).getCoordinates();
 		c[idCoord].z = val;
@@ -77,14 +100,27 @@ public class ApplicationUtils {
 		return dist;
 	}
 	
-	//create a geojson from a featurecollection
+	/**
+	 * Create a GeoJson from a FeatureCollection
+	 * @param featureCollection the FeatureCollection we want to write in a file
+	 * @param dir the full path to the write directory
+	 * @param fileName the name of the file
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
 	public static void featureCollectionToGeoJsonFile(FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection, File dir, String fileName) throws FileNotFoundException, IOException {
 		featureJSON = new FeatureJSON(new GeometryJSON(15));
 		featureJSON.setEncodeFeatureCollectionCRS(true);
 		featureJSON.writeFeatureCollection(featureCollection, new FileOutputStream(new File(dir, fileName)));
 	}
 	
-	//return the CoordinateReferenceSystem from a file
+	/**
+	 * Find the CoordinateReferenceSystem in a file
+	 * @param f the file we search in
+	 * @return CoordinateReferenceSystem
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
 	public static CoordinateReferenceSystem geoJsonToCoordinateReferenceSystem(File f) throws FileNotFoundException, IOException {
 		featureJSON = new FeatureJSON();
 		return featureJSON.readCRS(f);

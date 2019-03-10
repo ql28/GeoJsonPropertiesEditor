@@ -4,39 +4,27 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.ClassUtils;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
-import org.geotools.feature.type.Descriptors;
 import org.geotools.referencing.CRS;
-import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.PropertyDescriptor;
-import org.opengis.filter.identity.FeatureId;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
-
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
 
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -63,15 +51,11 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SelectionModel;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -86,8 +70,6 @@ public class FXMLDocumentController implements Initializable {
 	
 	@FXML
 	private BorderPane contentPane;
-	
-	/******  CONTENT PANEL   ******/
     @FXML
     private MenuBar mainMenu;
     @FXML
@@ -102,16 +84,12 @@ public class FXMLDocumentController implements Initializable {
     private NumberAxis xAxis;
     @FXML
     private NumberAxis yAxis;
-    
-    /****** MENU BAR ******/
     @FXML
     private MenuItem openMenuItem;
     @FXML
     private MenuItem saveMenuItem; 
     @FXML
-    private MenuItem closeMenuItem; 
-
-    /****** PARAMETERS PANEL ******/
+    private MenuItem closeMenuItem;
     @FXML
     private ListView<Object> featuresList;
     @FXML
@@ -137,37 +115,41 @@ public class FXMLDocumentController implements Initializable {
     /*--------DATA----------*/
     /************************/
     
+    //general variables
     private Stage stage;
     private Scene scene;
-    private Series<Number, Number> series;
     private File selectedFile;
     private File saveFile;
-
-    private Data<Number, Number> lastData;
-    
     private FeatureCollection<SimpleFeatureType, SimpleFeature> fc;
     private SimpleFeature selectedFeature;
     private SimpleFeatureType featureTypeParameters;
-
+    
+    //chart variables
+    private Series<Number, Number> series;
+    private Data<Number, Number> lastData;
+    
+    //parameters variables
     private CoordinateReferenceSystem selectedCRS;
     private List<Button> delButtonList = new ArrayList<Button>();
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        System.out.println("Bienvenue");
+    	
+    	saveMenuItem.setDisable(true);
+
+    	//initialize the chart
         series = new Series<Number, Number>();
         chart.setAnimated(false);        
         chart.getData().add(series);
         chart.setLegendVisible(false);
-        saveMenuItem.setDisable(true);
         
+        //initialize the CRS list
         crsChoiceBox.setItems(FXCollections.observableArrayList(
     	    "EPSG:4326",
     	    "EPSG:2154",
     	    "EPSG:32735",
     	    "EPSG:23032"
     	));
-        
         crsChoiceBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
 				try {
@@ -176,10 +158,9 @@ public class FXMLDocumentController implements Initializable {
 					e.printStackTrace();
 				}
             }
-        });
-        
+        });        
 
-        //texfield formatter
+        //texfield formatter to force numbers for the texfield point height
         Pattern validEditingState = Pattern.compile("-?(([1-9][0-9]*)|0)?(\\.[0-9]*)?");
         UnaryOperator<TextFormatter.Change> filter = c -> {
             String text = c.getControlNewText();
@@ -202,16 +183,20 @@ public class FXMLDocumentController implements Initializable {
     }
 	
     /****** MENU BAR METHODS ******/
-    //load geojson
+
+	/**
+	 * Create a file chooser windows to open a GeoJson file and load features
+	 * @param event ActionEvent called on menu click
+	 */
     @FXML
-    private void openGeoJson(ActionEvent event) {
-        System.out.println("Open GeoJson");
+    private void openGeoJson(ActionEvent event) {    	
+    	//create file chooser
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open GeoJson");
         fileChooser.getExtensionFilters().addAll(new ExtensionFilter("Json Files", "*.json"), new ExtensionFilter("All Files", "*.*"));
         selectedFile = fileChooser.showOpenDialog(stage);
+        //load the feature collection and initialize the features list
         if (selectedFile != null) {
-        	System.out.println(selectedFile.getName());
     		try {
 				fc = ApplicationUtils.geoJsonToFeatureCollection(selectedFile);
 				selectedCRS = ApplicationUtils.geoJsonToCoordinateReferenceSystem(selectedFile);
@@ -225,11 +210,14 @@ public class FXMLDocumentController implements Initializable {
         	saveMenuItem.setDisable(false);
         }
     }
-    
-    //save new values in geojson
+
+    /**
+	 * Create a file chooser windows to save a GeoJson file
+	 * @param event ActionEvent called on menu click
+	 */
     @FXML
     private void saveGeoJson(ActionEvent event) {
-        System.out.println("Save GeoJson");
+    	//create file chooser
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save GeoJson");
         fileChooser.getExtensionFilters().addAll(new ExtensionFilter("Json Files", "*.json"), new ExtensionFilter("All Files", "*.*"));
@@ -238,10 +226,8 @@ public class FXMLDocumentController implements Initializable {
         	fileChooser.setInitialFileName(selectedFile.getName());
         }
         saveFile = fileChooser.showSaveDialog(stage);
-        
+        //write the feature collection in a file
         if (saveFile != null){
-        	System.out.println(saveFile.getPath());
-        	System.out.println(saveFile.getName());
         	try {
 				ApplicationUtils.featureCollectionToGeoJsonFile(fc, saveFile.getParentFile(), saveFile.getName());
 			} catch (FileNotFoundException e) {
@@ -251,19 +237,19 @@ public class FXMLDocumentController implements Initializable {
 			}
         }
     }    
-    
+
+    /**
+	 * Quit the application
+	 * @param event ActionEvent called on menu click
+	 */
     @FXML
     private void quitApplication(ActionEvent event) {
     	Platform.exit();
     }
-    
-    @FXML
-    private void about(ActionEvent event) {
-    	
-    }
-    
-    /****** PARAMETERS PANEL METHODS ******/
-    //load geojson
+   
+    /**
+	 * Save coordinates changed in the graph
+	 */
     @FXML
     private void saveFeatureCoordinates() {
     	int i = 0;
@@ -273,27 +259,34 @@ public class FXMLDocumentController implements Initializable {
         }
     }
     
+    /**
+     * Update a selected node of the graph with the value typed in the point height texfield
+     * @param e action called on enter or on "OK" button click
+     */
     @FXML
     public void changeNodeValue(ActionEvent e) {
     	if(lastData != null) lastData.setYValue(Double.parseDouble(pointHeightTextField.getText()));
     }    
     
+    /**
+     * Create a new FeatureCollection from the parameters list define in the parameterVBox. Then recreate all features to match the new schema.
+     */
     @FXML
     private void saveParametersConfiguration(){
+    	//Define the new feature type
 		SimpleFeatureTypeBuilder simpleFeatureTypeBuilder = new SimpleFeatureTypeBuilder();
 		simpleFeatureTypeBuilder.setName("featureType");
 		simpleFeatureTypeBuilder.setCRS(selectedCRS);
-		simpleFeatureTypeBuilder.add("geometry", featureTypeParameters.getGeometryDescriptor().getType().getBinding());
-				
+		simpleFeatureTypeBuilder.add("geometry", featureTypeParameters.getGeometryDescriptor().getType().getBinding());	
 		parametersVBox.getChildren().forEach(child ->{
     		ObservableList<Node> params = ((HBox) child).getChildren();
 			try{ simpleFeatureTypeBuilder.add(((TextField)params.get(0)).getText(), (Class<?>)((ChoiceBox)params.get(1)).getSelectionModel().getSelectedItem()); }
 			catch(Exception e){}
 		});
-		
-		// init DefaultFeatureCollection
+		//create the new feature collection
 		SimpleFeatureBuilder simpleFeatureBuilder = new SimpleFeatureBuilder(simpleFeatureTypeBuilder.buildFeatureType());
 		DefaultFeatureCollection resultFeatureCollection = new DefaultFeatureCollection(null, simpleFeatureBuilder.getFeatureType());
+		//recreate all the features
 		FeatureIterator<SimpleFeature> iterator = fc.features();
 		while(iterator.hasNext()){
 			SimpleFeature myFeature = iterator.next();
@@ -315,19 +308,24 @@ public class FXMLDocumentController implements Initializable {
 			SimpleFeature sf = simpleFeatureBuilder.buildFeature(myFeature.getID());
 			resultFeatureCollection.add(sf);
 		}
-		
+		//reload the features list
 		fc = resultFeatureCollection;
     	addActionClicList();
 		loadFeatureCollectionParameters();
 	}
     
+    /**
+     * Save the new parameters values of a selected feature 
+     */
     @FXML
     private void saveParametersValues(){	
+    	//iterate through all the parameters field
     	parametersVBox.getChildren().forEach(child ->{
     		ObservableList<Node> params = ((HBox) child).getChildren();
     		
+    		//load each parameter name
     		String parameterName = ((Label)params.get(0)).getText();
-
+    		//then get the parameter value, varying from the type 
     		if(selectedFeature.getProperty(parameterName).getType().getBinding() == Double.class){
     			double parameterDouble = Double.parseDouble(((TextField)params.get(1)).getText());
     			selectedFeature.getProperty(parameterName).setValue(parameterDouble);    			
@@ -344,11 +342,10 @@ public class FXMLDocumentController implements Initializable {
     			boolean parameterBool = ((CheckBox)params.get(1)).selectedProperty().getValue(); 
         		selectedFeature.getProperty(parameterName).setValue(parameterBool);
     		}
-    	});    	
-
+    	});
+    	//recreate a new feature. Mandatory to update the feature ID
     	DefaultFeatureCollection dfc = new DefaultFeatureCollection(fc);
     	SimpleFeatureBuilder sfb = new SimpleFeatureBuilder(fc.getSchema());
-    	
     	Collection<PropertyDescriptor> descriptors = fc.getSchema().getDescriptors();
     	Iterator<PropertyDescriptor> i = descriptors.iterator();
     	while(i.hasNext()){
@@ -359,15 +356,17 @@ public class FXMLDocumentController implements Initializable {
     		else sfb.add(null);
     	}
 		SimpleFeature sf = sfb.buildFeature(featureIdTextField.getText());
-		dfc.add(sf);
-    	
+		dfc.add(sf);    	
+		//update the feature collection and features list
 		dfc.remove(selectedFeature);
 		selectedFeature = sf;
 		fc = dfc;
-    	addActionClicList();
-		
+    	addActionClicList();		
     }
     
+    /**
+     * Add a new parameter to the parameterVBox configuration list
+     */
     @FXML
     private void addParameters(){
     	HBox hb = new HBox();
@@ -384,18 +383,23 @@ public class FXMLDocumentController implements Initializable {
     }   
     
     /****** OTHER METHODS ******/
+    /**
+     * Load the parameters list from the feature collection and switch the interface
+     */
     public void loadFeatureCollectionParameters(){
-    	featureTypeParameters = ApplicationUtils.loadFeatureCollectionParameters(fc);
-    	Collection<PropertyDescriptor> descriptors = featureTypeParameters.getDescriptors();
-    	ArrayList<Object> ret = new ArrayList<Object>();
-    	Iterator<PropertyDescriptor> i = descriptors.iterator();
+    	//update interface
     	parametersVBox.getChildren().clear();
     	parametersConfigurationHBox.setVisible(true);
     	showParametersButton.setVisible(false);
     	featureIdHBox.setVisible(false);
     	saveParametersConfigButton.setVisible(true);
     	saveParametersValuesButton.setVisible(false);
-    	while(i.hasNext()){    		
+    	//load parameters
+    	featureTypeParameters = ApplicationUtils.loadFeatureCollectionParameters(fc);
+    	Collection<PropertyDescriptor> descriptors = featureTypeParameters.getDescriptors();
+    	ArrayList<Object> ret = new ArrayList<Object>();
+    	Iterator<PropertyDescriptor> i = descriptors.iterator();
+    	while(i.hasNext()){
     		PropertyDescriptor desc = i.next();
     		ret.add(desc);
     	
@@ -415,6 +419,9 @@ public class FXMLDocumentController implements Initializable {
     	addActionClicDelButton();
     }
     
+    /**
+     * Handle click on delete parameter button to the list
+     */
     public void addActionClicDelButton(){    	
     	delButtonList.forEach(delButton ->{
     		delButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
@@ -426,10 +433,14 @@ public class FXMLDocumentController implements Initializable {
     	});
     }
     
+    /**
+     * Handle dragging action on a chart node
+     */
     public void addActionDragPoint() {
         for (Data<Number, Number> data : series.getData()) {
             Node node = data.getNode() ;
             node.setCursor(Cursor.HAND);
+            //update selected node and style on click on a node
             node.setOnMousePressed(e -> {
             	if(lastData != data){
             		if(lastData != null){
@@ -442,8 +453,9 @@ public class FXMLDocumentController implements Initializable {
             		lastData = data;
             		node.setStyle("-fx-background-color: #00AA00, #000000;");
                     pointHeightTextField.setText(lastData.getYValue().toString());
-            	}            	
+            	} 	
             });
+            //update values in real time on drag
             node.setOnMouseDragged(e -> {
                 Point2D pointInScene = new Point2D(e.getSceneX(), e.getSceneY());
                 double yAxisLoc = yAxis.sceneToLocal(pointInScene).getY();
@@ -454,7 +466,11 @@ public class FXMLDocumentController implements Initializable {
         }
 	}
     
+    /**
+     * Handle features list selection click and load parameters list values
+     */
     public void addActionClicList() {
+    	//features list initialization
 		featuresList.setItems(null);
 		ObservableList<Object> observableList = FXCollections.observableArrayList(fc.toArray());
 		featuresList.setVisible(true);
@@ -462,14 +478,18 @@ public class FXMLDocumentController implements Initializable {
 		featuresList.setOnMouseClicked(new EventHandler<MouseEvent>() {
 	        @Override
 	        public void handle(MouseEvent event) {
-	        	selectedFeature = (SimpleFeature) featuresList.getSelectionModel().getSelectedItem();
+	        	//update interface
 	        	parametersConfigurationHBox.setVisible(false);
 	        	showParametersButton.setVisible(true);
 	        	featureIdHBox.setVisible(true);
 	        	saveParametersConfigButton.setVisible(false);
 	        	saveParametersValuesButton.setVisible(true);
 	        	parametersVBox.getChildren().clear();
+
+	        	//update selected feature
+	        	selectedFeature = (SimpleFeature) featuresList.getSelectionModel().getSelectedItem();
 	        	
+	        	//load chart
 	        	series.getData().clear();
 	    		lastData = null;
 	    		pointHeightTextField.setDisable(true);
@@ -480,6 +500,7 @@ public class FXMLDocumentController implements Initializable {
 	            });
 	            addActionDragPoint();
 	        	
+	            //load parameters values
 	            featureIdTextField.setText(selectedFeature.getID());
 	        	Collection<Property> properties = selectedFeature.getProperties();
 	        	Iterator<Property> i = properties.iterator();
@@ -521,6 +542,7 @@ public class FXMLDocumentController implements Initializable {
 	    		}	        	
 	        }
 	    });
+		//change the displayed name of features to match the ID
 		featuresList.setCellFactory(lv -> new ListCell<Object>(){
 			@Override
 			protected void updateItem(Object item, boolean empty){
