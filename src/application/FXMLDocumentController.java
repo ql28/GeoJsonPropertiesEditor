@@ -31,6 +31,7 @@ import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.PropertyDescriptor;
+import org.opengis.filter.identity.FeatureId;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
@@ -58,6 +59,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -157,6 +159,7 @@ public class FXMLDocumentController implements Initializable {
         
         crsChoiceBox.setItems(FXCollections.observableArrayList(
     	    "EPSG:4326",
+    	    "EPSG:2154",
     	    "EPSG:32735",
     	    "EPSG:23032"
     	));
@@ -305,7 +308,7 @@ public class FXMLDocumentController implements Initializable {
 	    			else simpleFeatureBuilder.add(null);
 	    		}
 	    	}
-			SimpleFeature sf = simpleFeatureBuilder.buildFeature(null);
+			SimpleFeature sf = simpleFeatureBuilder.buildFeature(myFeature.getID());
 			resultFeatureCollection.add(sf);
 		}
 		
@@ -445,7 +448,7 @@ public class FXMLDocumentController implements Initializable {
 	    		lastData = null;
 	    		pointHeightTextField.setDisable(true);
 	    		pointHeightButton.setDisable(true);
-	            ArrayList<Data<Number, Number>> datas = ApplicationUtils.loadCoordinates(selectedFeature);			            	            
+	            ArrayList<Data<Number, Number>> datas = ApplicationUtils.loadCoordinates(selectedFeature, selectedCRS);			            	            
 	            datas.forEach(data -> {
 	            	System.out.println(data.toString());
 	            	series.getData().add(data);
@@ -492,6 +495,17 @@ public class FXMLDocumentController implements Initializable {
 	    		}	        	
 	        }
 	    });
+		featuresList.setCellFactory(lv -> new ListCell<Object>(){
+			@Override
+			protected void updateItem(Object item, boolean empty){
+				super.updateItem(item, empty);
+				SimpleFeature sf = (SimpleFeature) item;
+				if(sf!=null){
+					setText(sf.getID());
+				}
+			}
+		});
+		
 	}
     
     void findStage(Stage stage) {
