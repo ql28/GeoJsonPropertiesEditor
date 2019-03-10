@@ -80,7 +80,17 @@
                                                 </Button>
                                              </children>
                                           </HBox>
-                                          <Button fx:id="showParametersButton" mnemonicParsing="false" onAction="#loadFeatureCollectionParameters" prefHeight="25.0" prefWidth="200.0" text="Show parameters configuration" visible="false" />
+                                          <Button fx:id="showParametersButton" layoutX="190.0" mnemonicParsing="false" onAction="#loadFeatureCollectionParameters" prefHeight="25.0" prefWidth="200.0" text="Show parameters configuration" visible="false" />
+                                          <HBox fx:id="featureIdHBox" prefHeight="26.0" prefWidth="180.0" visible="false">
+                                             <children>
+                                                <Label text=" ID">
+                                                   <padding>
+                                                      <Insets right="5.0" top="5.0" />
+                                                   </padding>
+                                                </Label>
+                                                <TextField fx:id="featureIdTextField" />
+                                             </children>
+                                          </HBox>
                                        </children>
                                     </Pane>
                                  </left>

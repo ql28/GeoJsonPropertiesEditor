@@ -95,6 +95,8 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private HBox parametersConfigurationHBox;
     @FXML
+    private HBox featureIdHBox;
+    @FXML
     private LineChart<Number,Number> chart;
     @FXML
     private NumberAxis xAxis;
@@ -122,6 +124,8 @@ public class FXMLDocumentController implements Initializable {
     private Button saveParametersConfigButton;
     @FXML
     private Button saveParametersValuesButton;
+    @FXML
+    private TextField featureIdTextField;
     @FXML
     private ChoiceBox<String> crsChoiceBox;
     @FXML
@@ -318,7 +322,7 @@ public class FXMLDocumentController implements Initializable {
 	}
     
     @FXML
-    private void saveParametersValues(){
+    private void saveParametersValues(){	
     	parametersVBox.getChildren().forEach(child ->{
     		ObservableList<Node> params = ((HBox) child).getChildren();
     		
@@ -338,10 +342,30 @@ public class FXMLDocumentController implements Initializable {
     		}
     		else if(selectedFeature.getProperty(parameterName).getType().getBinding() == Boolean.class){
     			boolean parameterBool = ((CheckBox)params.get(1)).selectedProperty().getValue(); 
-    			System.out.println(parameterBool);
         		selectedFeature.getProperty(parameterName).setValue(parameterBool);
     		}
-    	});
+    	});    	
+
+    	DefaultFeatureCollection dfc = new DefaultFeatureCollection(fc);
+    	SimpleFeatureBuilder sfb = new SimpleFeatureBuilder(fc.getSchema());
+    	
+    	Collection<PropertyDescriptor> descriptors = fc.getSchema().getDescriptors();
+    	Iterator<PropertyDescriptor> i = descriptors.iterator();
+    	while(i.hasNext()){
+    		PropertyDescriptor prop = i.next();
+    		if(selectedFeature.getProperty(prop.getName()) != null){
+    			sfb.add(selectedFeature.getProperty(prop.getName()).getValue());
+    		}
+    		else sfb.add(null);
+    	}
+		SimpleFeature sf = sfb.buildFeature(featureIdTextField.getText());
+		dfc.add(sf);
+    	
+		dfc.remove(selectedFeature);
+		selectedFeature = sf;
+		fc = dfc;
+    	addActionClicList();
+		
     }
     
     @FXML
@@ -368,6 +392,7 @@ public class FXMLDocumentController implements Initializable {
     	parametersVBox.getChildren().clear();
     	parametersConfigurationHBox.setVisible(true);
     	showParametersButton.setVisible(false);
+    	featureIdHBox.setVisible(false);
     	saveParametersConfigButton.setVisible(true);
     	saveParametersValuesButton.setVisible(false);
     	while(i.hasNext()){    		
@@ -440,6 +465,7 @@ public class FXMLDocumentController implements Initializable {
 	        	selectedFeature = (SimpleFeature) featuresList.getSelectionModel().getSelectedItem();
 	        	parametersConfigurationHBox.setVisible(false);
 	        	showParametersButton.setVisible(true);
+	        	featureIdHBox.setVisible(true);
 	        	saveParametersConfigButton.setVisible(false);
 	        	saveParametersValuesButton.setVisible(true);
 	        	parametersVBox.getChildren().clear();
@@ -450,11 +476,11 @@ public class FXMLDocumentController implements Initializable {
 	    		pointHeightButton.setDisable(true);
 	            ArrayList<Data<Number, Number>> datas = ApplicationUtils.loadCoordinates(selectedFeature, selectedCRS);			            	            
 	            datas.forEach(data -> {
-	            	System.out.println(data.toString());
 	            	series.getData().add(data);
 	            });
 	            addActionDragPoint();
 	        	
+	            featureIdTextField.setText(selectedFeature.getID());
 	        	Collection<Property> properties = selectedFeature.getProperties();
 	        	Iterator<Property> i = properties.iterator();
 	        	while(i.hasNext()){

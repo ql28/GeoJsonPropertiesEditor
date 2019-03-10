@@ -67,7 +67,6 @@ public class ApplicationUtils {
 	 */
 	public static double getDistanceFromCoordinates(Coordinate coordinate1, Coordinate coordinate2, CoordinateReferenceSystem myCrs){
 		GeodeticCalculator gc = new GeodeticCalculator(myCrs);
-		System.out.println(coordinate1.x);
 		try {
 			gc.setStartingPosition(JTS.toDirectPosition(coordinate1, myCrs));
 			gc.setDestinationPosition(JTS.toDirectPosition(coordinate2, myCrs));
